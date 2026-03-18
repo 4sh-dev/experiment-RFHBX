@@ -56,12 +56,15 @@ jobs:
           working-directory: backend
 
       - name: Install dependencies
+        working-directory: backend
         run: bundle install --jobs 4 --retry 3
 
       - name: Set up database
+        working-directory: backend
         run: bundle exec rails db:prepare
 
       - name: Run RSpec
+        working-directory: backend
         run: bundle exec rspec
 
   frontend:
