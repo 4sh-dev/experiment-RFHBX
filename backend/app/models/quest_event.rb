@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class QuestEvent < ApplicationRecord
-  self.ignored_columns = []
-
   enum :event_type, {
     started: "started",
     progress: "progress",
