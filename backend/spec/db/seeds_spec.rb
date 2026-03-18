@@ -2,14 +2,28 @@
 
 require "rails_helper"
 
-# Runs db/seeds.rb in a transaction, then verifies minimum counts.
-# The seed file is idempotent so running it twice in the same process is safe.
+# Runs db/seeds.rb once for this context, then cleans up afterward.
+#
+# WHY after(:all): `use_transactional_fixtures` wraps each *example* in a
+# transaction savepoint, but before(:all)/after(:all) run outside those
+# per-example transactions. That means seed records created in before(:all)
+# are committed to the DB and visible to all examples in this file — which is
+# what we want — but they would also leak into other spec files that run
+# afterward. The after(:all) block explicitly removes them in FK-safe order so
+# nothing leaks across the suite.
 RSpec.describe "db/seeds", type: :model do
   before(:all) do
-    # Load the seed file within the test database transaction managed by
-    # DatabaseCleaner / transactional fixtures.  We call it directly so we
-    # can assert on counts immediately after.
     load Rails.root.join("db/seeds.rb")
+  end
+
+  after(:all) do
+    # Delete in reverse FK-dependency order to avoid constraint violations.
+    QuestMembership.delete_all  # FKs → characters + quests
+    QuestEvent.delete_all       # FK  → quests
+    Artifact.delete_all         # FK  → characters (nullable)
+    Quest.delete_all
+    Character.delete_all
+    SimulationConfig.delete_all
   end
 
   describe "Character seeds" do
