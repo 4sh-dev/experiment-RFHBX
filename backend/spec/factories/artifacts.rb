@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :artifact do
-    sequence(:name) { |n| "#{%w[Ring\ of\ Power Sting Glamdring Andúril Phial\ of\ Galadriel].sample rescue "Artifact"} #{n}" }
+    sequence(:name) { |n| "#{['Ring of Power', 'Sting', 'Glamdring', 'And\u00FAril', 'Phial of Galadriel'].sample} #{n}" }
     artifact_type { %w[ring sword staff shield amulet].sample }
     power { "A powerful artifact from the age of legends." }
     corrupted { false }

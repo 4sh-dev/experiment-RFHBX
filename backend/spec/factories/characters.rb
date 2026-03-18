@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :character do
-    sequence(:name) { |n| "#{Faker::LoremFlickr.generate_simple rescue "Character"} #{n}" }
+    sequence(:name) { |n| "#{Faker::Fantasy::Tolkien.character} #{n}" }
     race { %w[Hobbit Elf Dwarf Man Wizard].sample }
     realm { Faker::Address.city }
     title { nil }
