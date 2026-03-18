@@ -74,7 +74,22 @@ jobs:
           exit 1
 
       - name: Set up database
-        run: bundle exec rails db:prepare
+        id: db_setup
+        continue-on-error: true
+        run: bundle exec rails db:prepare 2>&1 | tee /tmp/db-output.txt
+
+      - name: Upload db output on failure
+        if: steps.db_setup.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-setup-output
+          path: /tmp/db-output.txt
+
+      - name: Fail if db setup failed
+        if: steps.db_setup.outcome == 'failure'
+        run: |
+          cat /tmp/db-output.txt
+          exit 1
 
       - name: Run RSpec
         run: bundle exec rspec
