@@ -15,6 +15,7 @@ COPY Gemfile Gemfile.lock* ./
 RUN bundle install
 
 COPY . .
+RUN chmod +x bin/*
 
 COPY entrypoint.sh /usr/bin/entrypoint.sh
 RUN chmod +x /usr/bin/entrypoint.sh
