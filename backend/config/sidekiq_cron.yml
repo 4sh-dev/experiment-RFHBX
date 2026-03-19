@@ -1,0 +1,15 @@
+# Sidekiq Cron Schedule
+# Add cron job definitions here. Each key is the job name.
+# Format:
+#   job_name:
+#     cron: "* * * * *"   # cron expression
+#     class: MyWorker      # worker class name
+#     queue: default       # queue name (optional)
+#     args:                # arguments (optional)
+#
+# Example (uncomment to enable):
+# test_job_hourly:
+#   cron: "0 * * * *"
+#   class: TestJob
+#   queue: default
+#   description: "Smoke-test job that runs hourly"
