@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "sidekiq/web"
+
 Rails.application.routes.draw do
   # OpenAPI spec (JSON) and Scalar interactive docs
   get "/api/docs",      to: "api/docs#ui",   format: false
@@ -7,6 +9,10 @@ Rails.application.routes.draw do
 
   # rswag-api engine (serves swagger files from swagger/)
   mount Rswag::Api::Engine => "/api-docs"
+
+  # Sidekiq Web UI — session + basic-auth middleware configured in
+  # config/initializers/sidekiq.rb; full auth planned for Phase 6.
+  mount Sidekiq::Web => "/admin/sidekiq"
 
   # GraphQL endpoint
   post "/graphql", to: "graphql#execute"
