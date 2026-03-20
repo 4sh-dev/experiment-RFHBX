@@ -1,6 +1,6 @@
 import { cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mock oidc-client-ts so tests never hit a real OIDC server.
@@ -127,9 +127,7 @@ describe('AuthProvider', () => {
   it('throws when useAuth is used outside <AuthProvider>', () => {
     // Suppress React's console.error for this expected throw.
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => renderHook(() => useAuth())).toThrow(
-      'useAuth must be used inside <AuthProvider>',
-    );
+    expect(() => renderHook(() => useAuth())).toThrow('useAuth must be used inside <AuthProvider>');
     spy.mockRestore();
   });
 });

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, clearAuthTokenAccessor, setAuthTokenAccessor } from './api';
 
@@ -34,8 +34,9 @@ describe('Axios auth interceptor', () => {
     clearAuthTokenAccessor();
 
     // Build a minimal config and run the interceptor.
-    const { InternalAxiosRequestConfig } = await import('axios');
-    const config = { headers: axios.defaults.headers } as typeof InternalAxiosRequestConfig.prototype;
+    const config = {
+      headers: axios.defaults.headers,
+    } as InternalAxiosRequestConfig;
 
     // The interceptor is the first one registered on `api`; retrieve it.
     // biome-ignore lint/suspicious/noExplicitAny: test internals
@@ -52,10 +53,9 @@ describe('Axios auth interceptor', () => {
   it('injects Authorization: Bearer <token> when a token accessor is registered', async () => {
     setAuthTokenAccessor(() => 'my-secret-token');
 
-    const { InternalAxiosRequestConfig } = await import('axios');
     const config = {
       headers: {},
-    } as typeof InternalAxiosRequestConfig.prototype;
+    } as InternalAxiosRequestConfig;
 
     // biome-ignore lint/suspicious/noExplicitAny: test internals
     const interceptors = (api.interceptors.request as any).handlers as Array<{
@@ -73,10 +73,9 @@ describe('Axios auth interceptor', () => {
   it('does NOT add Authorization header when accessor returns null', async () => {
     setAuthTokenAccessor(() => null);
 
-    const { InternalAxiosRequestConfig } = await import('axios');
     const config = {
       headers: {},
-    } as typeof InternalAxiosRequestConfig.prototype;
+    } as InternalAxiosRequestConfig;
 
     // biome-ignore lint/suspicious/noExplicitAny: test internals
     const interceptors = (api.interceptors.request as any).handlers as Array<{

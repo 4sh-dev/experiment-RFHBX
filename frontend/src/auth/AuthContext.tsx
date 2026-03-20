@@ -1,4 +1,4 @@
-import { User, UserManager, WebStorageStateStore } from 'oidc-client-ts';
+import { type User, UserManager, WebStorageStateStore } from 'oidc-client-ts';
 import {
   createContext,
   type ReactNode,

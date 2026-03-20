@@ -1,7 +1,7 @@
 import { ActionIcon, AppShell, Group, Text } from '@mantine/core';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { UserInfo } from '../components/UserInfo';
 import { CableStatus } from '../components/CableStatus';
+import { UserInfo } from '../components/UserInfo';
 import { useQuestEventsChannel } from '../hooks/useQuestEventsChannel';
 import { useThemeStore } from '../store/themeStore';
 

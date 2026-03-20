@@ -1,5 +1,5 @@
-import { redirect } from '@tanstack/react-router';
 import type { ParsedLocation } from '@tanstack/react-router';
+import { redirect } from '@tanstack/react-router';
 import type { AuthContextValue } from './AuthContext';
 
 /**
@@ -23,10 +23,7 @@ import type { AuthContextValue } from './AuthContext';
  * });
  * ```
  */
-export function requireAuth(
-  auth: AuthContextValue | undefined,
-  location: ParsedLocation,
-): void {
+export function requireAuth(auth: AuthContextValue | undefined, location: ParsedLocation): void {
   if (!auth) {
     // Auth context is not yet wired — bail out silently; the router will
     // re-run beforeLoad once the context is available.
