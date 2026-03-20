@@ -1,3 +1,4 @@
+import { redirect } from '@tanstack/react-router';
 import type { ParsedLocation } from '@tanstack/react-router';
 import type { AuthContextValue } from './AuthContext';
 
@@ -36,8 +37,9 @@ export function requireAuth(
     // Redirect to OIDC login, preserving the current path as the return-to
     // destination so the callback can restore it after sign-in.
     auth.login(location.pathname + location.search);
-    // Throw a redirect-like object recognised by TanStack Router to abort
-    // the current navigation without rendering the protected component.
-    throw Object.assign(new Error('Unauthenticated'), { isRedirect: true });
+    // Use TanStack Router's redirect() to abort the current navigation so
+    // the protected component is never rendered.  The href is a no-op
+    // placeholder because the OIDC signinRedirect() above will take over.
+    throw redirect({ to: '/' });
   }
 }

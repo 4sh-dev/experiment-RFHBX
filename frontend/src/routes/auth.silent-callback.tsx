@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { UserManager } from 'oidc-client-ts';
 import { useEffect } from 'react';
+import { getOidcConfig } from '../auth/oidcConfig';
 
 /**
  * Handles the silent-renewal iframe callback.
@@ -12,17 +13,14 @@ import { useEffect } from 'react';
  */
 function AuthSilentCallbackPage() {
   useEffect(() => {
-    const OIDC_AUTHORITY = import.meta.env.VITE_OIDC_AUTHORITY ?? '';
-    const OIDC_CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID ?? '';
-    const OIDC_REDIRECT_URI =
-      import.meta.env.VITE_OIDC_REDIRECT_URI ?? `${window.location.origin}/auth/callback`;
+    const { authority, clientId, redirectUri } = getOidcConfig();
 
-    if (!OIDC_AUTHORITY || !OIDC_CLIENT_ID) return;
+    if (!authority || !clientId) return;
 
     const manager = new UserManager({
-      authority: OIDC_AUTHORITY,
-      client_id: OIDC_CLIENT_ID,
-      redirect_uri: OIDC_REDIRECT_URI,
+      authority,
+      client_id: clientId,
+      redirect_uri: redirectUri,
     });
 
     manager.signinSilentCallback().catch(() => {
