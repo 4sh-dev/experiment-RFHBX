@@ -8,16 +8,9 @@ import {
   useRef,
   useState,
 } from 'react';
+import { flushSync } from 'react-dom';
 import { clearAuthTokenAccessor, setAuthTokenAccessor } from '../lib/api';
-
-// ---------------------------------------------------------------------------
-// OIDC configuration — all values come from Vite env vars so they can be
-// overridden per environment without rebuilding.
-// ---------------------------------------------------------------------------
-const OIDC_AUTHORITY = import.meta.env.VITE_OIDC_AUTHORITY ?? '';
-const OIDC_CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID ?? '';
-const OIDC_REDIRECT_URI =
-  import.meta.env.VITE_OIDC_REDIRECT_URI ?? `${window.location.origin}/auth/callback`;
+import { getOidcConfig } from './oidcConfig';
 
 // ---------------------------------------------------------------------------
 // AuthContext public API
@@ -56,11 +49,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   // Lazily initialise the UserManager once.
-  if (!managerRef.current && OIDC_AUTHORITY && OIDC_CLIENT_ID) {
+  // getOidcConfig() reads env vars at call time so that test stubs (vi.stubEnv) apply.
+  const { authority, clientId, redirectUri } = getOidcConfig();
+
+  if (!managerRef.current && authority && clientId) {
     managerRef.current = new UserManager({
-      authority: OIDC_AUTHORITY,
-      client_id: OIDC_CLIENT_ID,
-      redirect_uri: OIDC_REDIRECT_URI,
+      authority,
+      client_id: clientId,
+      redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'openid profile email',
       // Store OIDC metadata (not tokens) in sessionStorage so the state
@@ -136,8 +132,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     if (!manager) return;
-    setUser(null);
-    clearAuthTokenAccessor();
+    // Flush synchronously so the UI reflects the cleared user before the
+    // redirect fires (also makes the state update observable in tests).
+    flushSync(() => {
+      setUser(null);
+      clearAuthTokenAccessor();
+    });
     await manager.signoutRedirect();
   }, [manager]);
 
