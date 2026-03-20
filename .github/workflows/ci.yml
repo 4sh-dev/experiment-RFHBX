@@ -103,11 +103,11 @@ jobs:
       - name: Lint (Biome)
         run: npx biome check .
 
+      - name: Build (also generates TanStack Router route tree)
+        run: npm run build
+
       - name: TypeScript check
         run: npx tsc -b --noEmit
 
       - name: Run tests (Vitest)
         run: npm run test
-
-      - name: Build
-        run: npm run build
