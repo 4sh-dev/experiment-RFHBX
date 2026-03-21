@@ -56,9 +56,7 @@ describe('ActionCableProvider / useActionCable', () => {
     mockGetAccessToken.mockReturnValue('my-jwt-token');
     renderHook(() => useActionCable(), { wrapper });
     expect(mockCreateConsumer).toHaveBeenCalledOnce();
-    expect(mockCreateConsumer).toHaveBeenCalledWith(
-      'ws://localhost:3000/cable?token=my-jwt-token',
-    );
+    expect(mockCreateConsumer).toHaveBeenCalledWith('ws://localhost:3000/cable?token=my-jwt-token');
   });
 
   it('URL-encodes the token', () => {
@@ -146,9 +144,7 @@ describe('ActionCableProvider / useActionCable', () => {
     mockGetAccessToken.mockReturnValue('token-a');
     const { rerender } = renderHook(() => useActionCable(), { wrapper });
     expect(mockCreateConsumer).toHaveBeenCalledTimes(1);
-    expect(mockCreateConsumer).toHaveBeenCalledWith(
-      'ws://localhost:3000/cable?token=token-a',
-    );
+    expect(mockCreateConsumer).toHaveBeenCalledWith('ws://localhost:3000/cable?token=token-a');
 
     // Token changes to B — provider re-renders.
     vi.clearAllMocks();
@@ -157,8 +153,6 @@ describe('ActionCableProvider / useActionCable', () => {
 
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
     expect(mockCreateConsumer).toHaveBeenCalledTimes(1);
-    expect(mockCreateConsumer).toHaveBeenCalledWith(
-      'ws://localhost:3000/cable?token=token-b',
-    );
+    expect(mockCreateConsumer).toHaveBeenCalledWith('ws://localhost:3000/cable?token=token-b');
   });
 });
