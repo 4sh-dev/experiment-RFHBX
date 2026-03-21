@@ -24,15 +24,11 @@ describe('questSchema', () => {
   });
 
   it('rejects an invalid status', () => {
-    expect(() =>
-      questSchema.parse({ ...validQuest, status: 'unknown' }),
-    ).toThrow();
+    expect(() => questSchema.parse({ ...validQuest, status: 'unknown' })).toThrow();
   });
 
   it('rejects an invalid quest_type', () => {
-    expect(() =>
-      questSchema.parse({ ...validQuest, quest_type: 'daily' }),
-    ).toThrow();
+    expect(() => questSchema.parse({ ...validQuest, quest_type: 'daily' })).toThrow();
   });
 
   it('accepts optional nullable fields as null', () => {
@@ -51,9 +47,7 @@ describe('questSchema', () => {
   it('accepts quest with members', () => {
     const result = questSchema.parse({
       ...validQuest,
-      members: [
-        { id: 1, name: 'Frodo', race: 'Hobbit', level: 3, status: 'idle' },
-      ],
+      members: [{ id: 1, name: 'Frodo', race: 'Hobbit', level: 3, status: 'idle' }],
     });
     expect(result.members).toHaveLength(1);
     expect(result.members?.[0].name).toBe('Frodo');

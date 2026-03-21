@@ -34,19 +34,13 @@ describe('QuestDetailModal', () => {
   });
 
   it('renders nothing when quest is null', () => {
-    const { container } = render(
-      <QuestDetailModal quest={null} onClose={vi.fn()} />,
-      { wrapper },
-    );
+    const { container } = render(<QuestDetailModal quest={null} onClose={vi.fn()} />, { wrapper });
 
     expect(container.innerHTML).toBe('');
   });
 
   it('renders quest details when quest is provided', () => {
-    render(
-      <QuestDetailModal quest={sampleQuest} onClose={vi.fn()} />,
-      { wrapper },
-    );
+    render(<QuestDetailModal quest={sampleQuest} onClose={vi.fn()} />, { wrapper });
 
     expect(screen.getByText('Destroy the Ring')).toBeInTheDocument();
     expect(screen.getByText(/Journey to Mount Doom/)).toBeInTheDocument();
@@ -58,10 +52,7 @@ describe('QuestDetailModal', () => {
   });
 
   it('renders member list', () => {
-    render(
-      <QuestDetailModal quest={sampleQuest} onClose={vi.fn()} />,
-      { wrapper },
-    );
+    render(<QuestDetailModal quest={sampleQuest} onClose={vi.fn()} />, { wrapper });
 
     expect(screen.getByText('Frodo Baggins')).toBeInTheDocument();
     expect(screen.getByText('Aragorn')).toBeInTheDocument();
@@ -71,20 +62,18 @@ describe('QuestDetailModal', () => {
 
   it('shows start button for pending quests', () => {
     const onStart = vi.fn();
-    render(
-      <QuestDetailModal quest={sampleQuest} onClose={vi.fn()} onStart={onStart} />,
-      { wrapper },
-    );
+    render(<QuestDetailModal quest={sampleQuest} onClose={vi.fn()} onStart={onStart} />, {
+      wrapper,
+    });
 
     expect(screen.getByTestId('start-quest-button')).toBeInTheDocument();
   });
 
   it('calls onStart with quest id when start button is clicked', async () => {
     const onStart = vi.fn();
-    render(
-      <QuestDetailModal quest={sampleQuest} onClose={vi.fn()} onStart={onStart} />,
-      { wrapper },
-    );
+    render(<QuestDetailModal quest={sampleQuest} onClose={vi.fn()} onStart={onStart} />, {
+      wrapper,
+    });
 
     await userEvent.click(screen.getByTestId('start-quest-button'));
     expect(onStart).toHaveBeenCalledWith(1);
@@ -92,20 +81,16 @@ describe('QuestDetailModal', () => {
 
   it('hides start button for active quests', () => {
     const activeQuest: Quest = { ...sampleQuest, status: 'active' };
-    render(
-      <QuestDetailModal quest={activeQuest} onClose={vi.fn()} onStart={vi.fn()} />,
-      { wrapper },
-    );
+    render(<QuestDetailModal quest={activeQuest} onClose={vi.fn()} onStart={vi.fn()} />, {
+      wrapper,
+    });
 
     expect(screen.queryByTestId('start-quest-button')).not.toBeInTheDocument();
   });
 
   it('shows progress bar when progress is set', () => {
     const withProgress: Quest = { ...sampleQuest, status: 'active', progress: 75 };
-    render(
-      <QuestDetailModal quest={withProgress} onClose={vi.fn()} />,
-      { wrapper },
-    );
+    render(<QuestDetailModal quest={withProgress} onClose={vi.fn()} />, { wrapper });
 
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
