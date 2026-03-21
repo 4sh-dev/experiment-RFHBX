@@ -40,7 +40,6 @@ function AppNavLink({ to, label }: { to: string; label: string }) {
   return (
     <NavLink
       component={Link}
-      // @ts-expect-error — TanStack Router Link `to` prop passes through correctly
       to={to}
       label={label}
       active={isActive}
