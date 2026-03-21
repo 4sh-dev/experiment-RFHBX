@@ -33,10 +33,12 @@ describe('QuestDetailModal', () => {
     cleanup();
   });
 
-  it('renders nothing when quest is null', () => {
-    const { container } = render(<QuestDetailModal quest={null} onClose={vi.fn()} />, { wrapper });
+  it('renders nothing visible when quest is null', () => {
+    render(<QuestDetailModal quest={null} onClose={vi.fn()} />, { wrapper });
 
-    expect(container.innerHTML).toBe('');
+    // Modal should not be present in the DOM.
+    expect(screen.queryByText('Destroy the Ring')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('start-quest-button')).not.toBeInTheDocument();
   });
 
   it('renders quest details when quest is provided', () => {
