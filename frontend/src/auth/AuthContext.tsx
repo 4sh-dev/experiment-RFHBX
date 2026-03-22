@@ -13,14 +13,26 @@ import { clearAuthTokenAccessor, setAuthTokenAccessor } from '../lib/api';
 import { getOidcConfig } from './oidcConfig';
 
 // ---------------------------------------------------------------------------
+// Dev bypass types
+// ---------------------------------------------------------------------------
+
+export interface DevUser {
+  sub: string;
+  email: string;
+  name: string;
+}
+
+// ---------------------------------------------------------------------------
 // AuthContext public API
 // ---------------------------------------------------------------------------
 export interface AuthContextValue {
-  /** The current OIDC user (null while loading or unauthenticated). */
+  /** The current OIDC user (null while loading, unauthenticated, or in dev-bypass mode). */
   user: User | null;
+  /** Dev-bypass user info — populated only when DEV_AUTH_BYPASS is active. */
+  devUser: DevUser | null;
   /** True once the initial silent-signin / session-restore has completed. */
   isLoading: boolean;
-  /** True when a valid, non-expired user is present. */
+  /** True when a valid, non-expired user is present (OIDC or dev-bypass). */
   isAuthenticated: boolean;
   /** Redirect to the OIDC provider login page (PKCE). */
   login: (returnTo?: string) => Promise<void>;
@@ -28,6 +40,12 @@ export interface AuthContextValue {
   logout: () => Promise<void>;
   /** Return the raw access token string, or null if not authenticated. */
   getAccessToken: () => string | null;
+  /**
+   * Dev-bypass login — only available when VITE_DEV_AUTH_BYPASS=true.
+   * Calls POST /api/dev/auth, retrieves a signed bypass token, and sets
+   * the auth state without going through an OIDC provider.
+   */
+  devLogin: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -41,12 +59,17 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * - PKCE redirect flow
  * - In-memory token storage (never localStorage)
  * - Silent token renewal before expiry
+ * - Dev bypass mode (DEV_AUTH_BYPASS=true, development only)
  * - Exposes login/logout helpers and user info via context
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const managerRef = useRef<UserManager | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Dev-bypass state — kept separately from OIDC user state.
+  const [devToken, setDevToken] = useState<string | null>(null);
+  const [devUser, setDevUser] = useState<DevUser | null>(null);
 
   // Lazily initialise the UserManager once.
   // getOidcConfig() reads env vars at call time so that test stubs (vi.stubEnv) apply.
@@ -114,10 +137,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user && !user.expired) {
       setAuthTokenAccessor(() => user.access_token);
+    } else if (devToken) {
+      setAuthTokenAccessor(() => devToken);
     } else {
       clearAuthTokenAccessor();
     }
-  }, [user]);
+  }, [user, devToken]);
 
   const login = useCallback(
     async (returnTo?: string) => {
@@ -131,6 +156,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    // Clear dev-bypass state.
+    if (devToken) {
+      flushSync(() => {
+        setDevToken(null);
+        setDevUser(null);
+        clearAuthTokenAccessor();
+      });
+      return;
+    }
+
     if (!manager) return;
     // Flush synchronously so the UI reflects the cleared user before the
     // redirect fires (also makes the state update observable in tests).
@@ -139,21 +174,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearAuthTokenAccessor();
     });
     await manager.signoutRedirect();
-  }, [manager]);
+  }, [manager, devToken]);
 
   const getAccessToken = useCallback((): string | null => {
+    if (devToken) return devToken;
     return user?.access_token ?? null;
-  }, [user]);
+  }, [user, devToken]);
 
-  const isAuthenticated = !!user && !user.expired;
+  /**
+   * Dev-bypass login.  Calls the backend's dev auth endpoint to obtain a
+   * signed bypass token, then stores it in place of an OIDC access token.
+   * No-op if VITE_DEV_AUTH_BYPASS is not set.
+   */
+  const devLogin = useCallback(async (): Promise<void> => {
+    const response = await fetch('/api/dev/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Dev auth failed: ${response.status}`);
+    }
+
+    const data = (await response.json()) as { token: string; user: DevUser };
+    setDevToken(data.token);
+    setDevUser(data.user);
+    setAuthTokenAccessor(() => data.token);
+  }, []);
+
+  const isAuthenticated = (!!user && !user.expired) || !!devToken;
 
   const value: AuthContextValue = {
     user,
+    devUser,
     isLoading,
     isAuthenticated,
     login,
     logout,
     getAccessToken,
+    devLogin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
