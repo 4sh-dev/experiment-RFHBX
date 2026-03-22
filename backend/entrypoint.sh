@@ -8,7 +8,13 @@ rm -f /app/tmp/pids/server.pid
 # persisted backend_bundle volume) was last built.  `bundle check` exits
 # 0 when everything is satisfied, so `bundle install` only runs when
 # there is actually something new to fetch.
-bundle check || bundle install
+if bundle check > /dev/null 2>&1; then
+  echo "[entrypoint] Gem bundle satisfied — skipping bundle install."
+else
+  echo "[entrypoint] Gem mismatch detected — running bundle install (this may take a minute)..."
+  bundle install
+  echo "[entrypoint] bundle install complete."
+fi
 
 # Wait for PostgreSQL to be reachable before running db:prepare.
 # Docker Compose depends_on with service_healthy should guarantee this,
@@ -31,6 +37,8 @@ for i in $(seq 1 $MAX_RETRIES); do
 done
 
 # Prepare database (create if needed, run migrations)
+echo "[entrypoint] Running db:prepare..."
 bundle exec rails db:prepare
+echo "[entrypoint] db:prepare complete."
 
 exec "$@"
