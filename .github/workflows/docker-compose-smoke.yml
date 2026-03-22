@@ -63,6 +63,15 @@ jobs:
           echo "Waiting for backend (entrypoint: bundle install + db:prepare + server start)..."
           timeout 600 bash -c '
             until curl -sf http://localhost:3000/api/health > /dev/null 2>&1; do
+              # Bail immediately if the backend container has exited unexpectedly
+              # (e.g. a failed bundle install, db:prepare error, or crash at boot).
+              # Without this check the loop spins silently for the full 600 s,
+              # making a crash look like a timeout.
+              if [ -n "$(docker compose ps --status exited -q backend 2>/dev/null)" ]; then
+                echo "ERROR: backend container exited unexpectedly. Last 100 log lines:"
+                docker compose logs --tail=100 backend
+                exit 1
+              fi
               echo "  backend: waiting..."
               sleep 5
             done
