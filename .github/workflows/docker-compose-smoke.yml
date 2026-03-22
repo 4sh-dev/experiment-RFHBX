@@ -14,7 +14,7 @@ jobs:
   smoke-test:
     name: Docker Compose Integration
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -22,6 +22,12 @@ jobs:
 
       - name: Build all Docker images
         run: docker compose build
+
+      - name: Pull infrastructure images
+        # postgres, redis, and elasticmq have no build context so they are
+        # not pulled by `docker compose build`. Pull them explicitly here so
+        # image-pull time is not charged against the health-check timeout.
+        run: docker compose pull postgres redis elasticmq
 
       - name: Start full stack
         run: docker compose up -d
@@ -31,7 +37,7 @@ jobs:
           echo "Waiting for postgres and redis to be healthy..."
           for svc in postgres redis; do
             echo "  $svc: waiting..."
-            timeout 120 bash -c "
+            timeout 300 bash -c "
               until docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{end}}' \$(docker compose ps -q $svc) 2>/dev/null | grep -q healthy; do
                 sleep 3
               done
@@ -42,7 +48,7 @@ jobs:
           # elasticmq-native has no shell utilities so Docker healthcheck is
           # not possible. Poll the SQS API port from the host instead.
           echo "  elasticmq: waiting (host-side TCP poll)..."
-          timeout 120 bash -c '
+          timeout 300 bash -c '
             until curl -sf http://localhost:9324 > /dev/null 2>&1; do
               sleep 3
             done
