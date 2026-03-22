@@ -10,6 +10,14 @@ Rails.application.configure do
 
   config.active_job.queue_adapter = :sidekiq
 
+  # Allow WebSocket upgrades from Vite dev server (covers both Docker and native dev topologies).
+  # http://0.0.0.0:5173 — origin sent when Vite binds to 0.0.0.0 inside Docker
+  # http://localhost:5173 — origin sent in native (non-Docker) dev setups
+  config.action_cable.allowed_request_origins = [
+    "http://localhost:5173",
+    "http://0.0.0.0:5173"
+  ]
+
   config.active_record.migration_error = :page_load
   config.active_record.verbose_query_logs = true
   config.active_record.query_log_tags_enabled = true
