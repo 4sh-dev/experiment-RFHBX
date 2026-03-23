@@ -1,4 +1,4 @@
-import { cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -129,5 +129,119 @@ describe('AuthProvider', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => renderHook(() => useAuth())).toThrow('useAuth must be used inside <AuthProvider>');
     spy.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Dev-bypass auto-login tests
+// ---------------------------------------------------------------------------
+
+describe('AuthProvider — DEV_AUTH_BYPASS auto-login', () => {
+  const devAuthResponse = {
+    token: 'dev-bypass-token',
+    user: { sub: 'dev-user', email: 'dev@mordors-edge.local', name: 'Dev User' },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Default: no existing OIDC session.
+    mockGetUser.mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllEnvs();
+  });
+
+  it('calls devLogin automatically on mount when VITE_DEV_AUTH_BYPASS is "true"', async () => {
+    vi.stubEnv('VITE_DEV_AUTH_BYPASS', 'true');
+
+    // Stub fetch so devLogin() succeeds.
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => devAuthResponse,
+    } as Response);
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    // Wait for loading to complete and the auto-login to fire.
+    await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      '/api/dev/auth',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(result.current.devUser).toEqual(devAuthResponse.user);
+    expect(result.current.getAccessToken()).toBe('dev-bypass-token');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('does NOT call devLogin automatically when VITE_DEV_AUTH_BYPASS is not "true"', async () => {
+    vi.stubEnv('VITE_DEV_AUTH_BYPASS', 'false');
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    // fetch should not have been called for dev auth.
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.current.isAuthenticated).toBe(false);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('does NOT call devLogin again when already authenticated in bypass mode', async () => {
+    vi.stubEnv('VITE_DEV_AUTH_BYPASS', 'true');
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => devAuthResponse,
+    } as Response);
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    // Wait for first auto-login to complete.
+    await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+
+    const callCount = fetchSpy.mock.calls.length;
+
+    // Trigger a re-render; devLogin should not be called again.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+
+    expect(fetchSpy.mock.calls.length).toBe(callCount);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('logs an error and stays unauthenticated when devLogin fails in bypass mode', async () => {
+    vi.stubEnv('VITE_DEV_AUTH_BYPASS', 'true');
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+    } as Response);
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    // Give the async devLogin error path time to settle.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[AuthContext] Auto dev-login failed:',
+      expect.any(Error),
+    );
+    expect(result.current.isAuthenticated).toBe(false);
+
+    fetchSpy.mockRestore();
+    consoleSpy.mockRestore();
   });
 });

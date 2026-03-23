@@ -204,6 +204,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = (!!user && !user.expired) || !!devToken;
 
+  // ---------------------------------------------------------------------------
+  // Auto-login when DEV_AUTH_BYPASS is active
+  // ---------------------------------------------------------------------------
+  // If the bypass flag is set, call devLogin() automatically on mount so the
+  // developer never sees the OIDC login screen.  We guard against re-calling
+  // once already authenticated (devToken set) and wait until the loading phase
+  // has completed so we don't race with an existing OIDC session restore.
+  const isDevBypass = import.meta.env.VITE_DEV_AUTH_BYPASS === 'true';
+
+  useEffect(() => {
+    if (isDevBypass && !isLoading && !isAuthenticated) {
+      devLogin().catch((err: unknown) => {
+        console.error('[AuthContext] Auto dev-login failed:', err);
+      });
+    }
+  }, [isLoading, isAuthenticated, devLogin]);
+
   const value: AuthContextValue = {
     user,
     devUser,
