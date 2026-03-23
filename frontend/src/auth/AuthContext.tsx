@@ -51,13 +51,6 @@ export interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 // ---------------------------------------------------------------------------
-// Dev bypass flag — evaluated once at module load time.
-// Vite replaces import.meta.env.VITE_* at build time; the VITE_ prefix is
-// required for the value to be present in the browser bundle.
-// ---------------------------------------------------------------------------
-const DEV_AUTH_BYPASS = import.meta.env.VITE_DEV_AUTH_BYPASS === 'true';
-
-// ---------------------------------------------------------------------------
 // AuthProvider
 // ---------------------------------------------------------------------------
 
@@ -81,9 +74,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Lazily initialise the UserManager once.
   // getOidcConfig() reads env vars at call time so that test stubs (vi.stubEnv) apply.
   // Skip OIDC setup entirely when dev bypass is active.
+  // Read the bypass flag inline so that vi.stubEnv() in tests takes effect per-render
+  // (Vite replaces import.meta.env.VITE_* at build time for production bundles).
   const { authority, clientId, redirectUri } = getOidcConfig();
 
-  if (!DEV_AUTH_BYPASS && !managerRef.current && authority && clientId) {
+  if (import.meta.env.VITE_DEV_AUTH_BYPASS !== 'true' && !managerRef.current && authority && clientId) {
     managerRef.current = new UserManager({
       authority,
       client_id: clientId,
@@ -105,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialise auth state on mount.
   useEffect(() => {
-    if (DEV_AUTH_BYPASS) {
+    if (import.meta.env.VITE_DEV_AUTH_BYPASS === 'true') {
       // Auto dev-bypass: authenticate immediately against the backend's dev
       // endpoint, without any user interaction or OIDC provider.
       // isLoading stays true until the request settles so the loading spinner
