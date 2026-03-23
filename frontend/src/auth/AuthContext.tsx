@@ -51,6 +51,13 @@ export interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 // ---------------------------------------------------------------------------
+// Dev bypass flag — evaluated once at module load time.
+// Vite replaces import.meta.env.VITE_* at build time; the VITE_ prefix is
+// required for the value to be present in the browser bundle.
+// ---------------------------------------------------------------------------
+const DEV_AUTH_BYPASS = import.meta.env.VITE_DEV_AUTH_BYPASS === 'true';
+
+// ---------------------------------------------------------------------------
 // AuthProvider
 // ---------------------------------------------------------------------------
 
@@ -59,7 +66,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * - PKCE redirect flow
  * - In-memory token storage (never localStorage)
  * - Silent token renewal before expiry
- * - Dev bypass mode (DEV_AUTH_BYPASS=true, development only)
+ * - Dev bypass mode (VITE_DEV_AUTH_BYPASS=true, development only)
  * - Exposes login/logout helpers and user info via context
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -73,9 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Lazily initialise the UserManager once.
   // getOidcConfig() reads env vars at call time so that test stubs (vi.stubEnv) apply.
+  // Skip OIDC setup entirely when dev bypass is active.
   const { authority, clientId, redirectUri } = getOidcConfig();
 
-  if (!managerRef.current && authority && clientId) {
+  if (!DEV_AUTH_BYPASS && !managerRef.current && authority && clientId) {
     managerRef.current = new UserManager({
       authority,
       client_id: clientId,
@@ -95,8 +103,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const manager = managerRef.current;
 
-  // Wire up event listeners.
+  // Initialise auth state on mount.
   useEffect(() => {
+    if (DEV_AUTH_BYPASS) {
+      // Auto dev-bypass: authenticate immediately against the backend's dev
+      // endpoint, without any user interaction or OIDC provider.
+      // isLoading stays true until the request settles so the loading spinner
+      // is shown for only as long as necessary.
+      fetch('/api/dev/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`Dev auth failed: ${response.status}`);
+          const data = (await response.json()) as { token: string; user: DevUser };
+          setDevToken(data.token);
+          setDevUser(data.user);
+          setAuthTokenAccessor(() => data.token);
+        })
+        .catch((err) => {
+          // If the auto-bypass fails (e.g. backend not running yet), log the
+          // error and fall through to unauthenticated state so the login page
+          // is shown with the manual "Dev Login" button as a fallback.
+          console.error('[DevAuth] Auto-bypass login failed:', err);
+        })
+        .finally(() => setIsLoading(false));
+      return; // no OIDC event listeners needed
+    }
+
     if (!manager) {
       setIsLoading(false);
       return;
@@ -184,7 +218,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /**
    * Dev-bypass login.  Calls the backend's dev auth endpoint to obtain a
    * signed bypass token, then stores it in place of an OIDC access token.
-   * No-op if VITE_DEV_AUTH_BYPASS is not set.
+   * Only available when VITE_DEV_AUTH_BYPASS=true; used as a manual fallback
+   * if the auto-bypass on mount fails (e.g. backend not yet ready).
    */
   const devLogin = useCallback(async (): Promise<void> => {
     const response = await fetch('/api/dev/auth', {

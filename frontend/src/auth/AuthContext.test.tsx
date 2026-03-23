@@ -41,7 +41,7 @@ function wrapper({ children }: { children: ReactNode }) {
   return <AuthProvider>{children}</AuthProvider>;
 }
 
-describe('AuthProvider', () => {
+describe('AuthProvider — OIDC mode', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -129,5 +129,123 @@ describe('AuthProvider', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => renderHook(() => useAuth())).toThrow('useAuth must be used inside <AuthProvider>');
     spy.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Dev-bypass mode tests
+// ---------------------------------------------------------------------------
+
+describe('AuthProvider — DEV_AUTH_BYPASS mode', () => {
+  const devAuthResponse = {
+    token: 'dev-bypass-token-xyz',
+    user: { sub: 'dev-user', email: 'dev@mordors-edge.local', name: 'Dev User' },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv('VITE_DEV_AUTH_BYPASS', 'true');
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllEnvs();
+  });
+
+  it('auto-authenticates on mount without user interaction when bypass is active', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => devAuthResponse,
+      }),
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    // Starts loading.
+    expect(result.current.isLoading).toBe(true);
+
+    // Resolves to authenticated without any user action.
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.devUser).toEqual(devAuthResponse.user);
+    expect(result.current.getAccessToken()).toBe('dev-bypass-token-xyz');
+    expect(result.current.user).toBeNull(); // OIDC user is never set
+  });
+
+  it('calls POST /api/dev/auth automatically on mount', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => devAuthResponse,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/dev/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('does not initialise UserManager when bypass is active', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => devAuthResponse,
+      }),
+    );
+
+    const { UserManager } = await import('oidc-client-ts');
+    const mockUserManagerCtor = vi.mocked(UserManager);
+    mockUserManagerCtor.mockClear();
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    // UserManager should NOT have been constructed in bypass mode.
+    expect(mockUserManagerCtor).not.toHaveBeenCalled();
+  });
+
+  it('falls through to unauthenticated if auto-bypass fetch fails', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+      }),
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.devUser).toBeNull();
+    consoleSpy.mockRestore();
+  });
+
+  it('clears dev session on logout without redirecting', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => devAuthResponse,
+      }),
+    );
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+
+    await result.current.logout();
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.devUser).toBeNull();
+    expect(result.current.getAccessToken()).toBeNull();
+    // No OIDC signout redirect should occur.
+    expect(mockSignoutRedirect).not.toHaveBeenCalled();
   });
 });
