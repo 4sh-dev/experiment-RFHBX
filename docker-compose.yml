@@ -30,7 +30,7 @@ services:
 
   # ElasticMQ — local SQS-compatible service (no real AWS required)
   # Access the management UI at http://localhost:9325
-  # SQS endpoint: http://localhost:9324 (also accessible as http://elasticmq:9324 within Docker)
+  # SQS endpoint: http://elasticmq:9324 (within Docker) or http://localhost:9324 (from host)
   elasticmq:
     image: softwaremill/elasticmq-native
     ports:
