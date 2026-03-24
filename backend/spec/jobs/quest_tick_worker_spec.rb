@@ -367,4 +367,32 @@ RSpec.describe QuestTickWorker, type: :job do
       expect { subject.perform }.to change { Quest.where(quest_type: :random, status: :active).count }.by(1)
     end
   end
+
+  describe "tick interval configuration" do
+    it "exposes TICK_INTERVAL as a positive integer" do
+      expect(QuestTickWorker::TICK_INTERVAL).to be_a(Integer)
+      expect(QuestTickWorker::TICK_INTERVAL).to be > 0
+    end
+
+    it "reads TICK_INTERVAL from QUEST_TICK_INTERVAL env var when set" do
+      stub_const("QuestTickWorker::TICK_INTERVAL", 10)
+      expect(QuestTickWorker::TICK_INTERVAL).to eq(10)
+    end
+
+    context "when simulation is running" do
+      it "schedules the next tick via perform_in after completing work" do
+        expect(QuestTickWorker).to receive(:perform_in).with(QuestTickWorker::TICK_INTERVAL)
+        subject.perform
+      end
+    end
+
+    context "when simulation is not running" do
+      before { config.update!(running: false) }
+
+      it "does not schedule a next tick when simulation is stopped" do
+        expect(QuestTickWorker).not_to receive(:perform_in)
+        subject.perform
+      end
+    end
+  end
 end

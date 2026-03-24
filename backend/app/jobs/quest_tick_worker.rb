@@ -5,6 +5,11 @@ class QuestTickWorker
 
   sidekiq_options queue: :default, retry: 3
 
+  # How many seconds between ticks.
+  # Override via QUEST_TICK_INTERVAL env var.
+  # Default: 5 s in development/test for fast feedback; 60 s in production.
+  TICK_INTERVAL = ENV.fetch("QUEST_TICK_INTERVAL", Rails.env.production? ? 60 : 5).to_i
+
   def perform
     config = SimulationConfig.current
     return unless config.running?
@@ -18,6 +23,11 @@ class QuestTickWorker
     else
       ensure_random_quest(config)
     end
+
+    # Schedule the next tick at the configured interval so sub-minute
+    # frequencies are possible. The sidekiq-cron entry acts as a
+    # bootstrap / dead-chain reviver and fires at most once per minute.
+    self.class.perform_in(TICK_INTERVAL)
   end
 
   private
