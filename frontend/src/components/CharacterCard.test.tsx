@@ -38,10 +38,24 @@ describe('CharacterCard', () => {
     expect(screen.getByText('The Shire')).toBeInTheDocument();
   });
 
-  it('renders the character title', () => {
+  it('renders level and title together on the second line', () => {
     render(<CharacterCard character={sampleCharacter} onClick={vi.fn()} />, { wrapper });
 
-    expect(screen.getByText('Ring Bearer')).toBeInTheDocument();
+    expect(screen.getByText('Lv.1 \u00b7 Ring Bearer')).toBeInTheDocument();
+  });
+
+  it('renders only the level prefix when character has no title', () => {
+    const noTitle: Character = { id: 3, name: 'Sm\u00e9agol', race: 'Hobbit', level: 5 };
+    render(<CharacterCard character={noTitle} onClick={vi.fn()} />, { wrapper });
+
+    expect(screen.getByText('Lv.5')).toBeInTheDocument();
+  });
+
+  it('renders nothing on the second line when level and title are absent', () => {
+    const minimal: Character = { id: 4, name: 'Unnamed Orc', race: 'Orc' };
+    render(<CharacterCard character={minimal} onClick={vi.fn()} />, { wrapper });
+
+    expect(screen.queryByText(/^Lv\./)).not.toBeInTheDocument();
   });
 
   it('renders the status badge', () => {
