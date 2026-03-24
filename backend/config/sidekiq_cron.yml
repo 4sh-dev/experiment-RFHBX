@@ -8,10 +8,10 @@
 #     args:                # arguments (optional)
 
 quest_tick:
-  cron: "* * * * *"
+  cron: "<%= ENV.fetch('QUEST_TICK_CRON', '* * * * *') %>"
   class: QuestTickWorker
   queue: default
-  description: "Advances quest progress every minute when simulation is running"
+  description: "Bootstrap / dead-chain reviver for quest ticks. Fine-grained frequency is controlled by QUEST_TICK_INTERVAL via perform_in self-scheduling."
 
 eye_of_sauron:
   cron: "<%= ENV.fetch('EYE_OF_SAURON_CRON', '* * * * *') %>"
