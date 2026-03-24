@@ -39,9 +39,11 @@ export function CharacterCard({ character, onClick }: CharacterCardProps) {
           )}
         </Group>
 
-        {character.title && (
-          <Text size="xs" c="dimmed" fs="italic">
-            {character.title}
+        {(character.level !== undefined || character.title) && (
+          <Text size="sm" c="dimmed" fs="italic">
+            {character.level !== undefined
+              ? `Lv.${character.level}${character.title ? ' \u00b7 ' + character.title : ''}`
+              : character.title}
           </Text>
         )}
 
