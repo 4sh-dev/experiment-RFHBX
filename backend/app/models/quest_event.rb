@@ -16,5 +16,5 @@ class QuestEvent < ApplicationRecord
 
   scope :by_event_type, ->(type) { where(event_type: type) }
   scope :by_quest, ->(quest_id) { where(quest_id: quest_id) }
-  scope :by_quest_title, ->(title) { joins(:quest).where("quests.title ILIKE ?", "%#{title}%") }
+  scope :by_quest_title, ->(title) { joins(:quest).where("quests.title ILIKE ?", "%#{sanitize_sql_like(title)}%") }
 end
