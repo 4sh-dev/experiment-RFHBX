@@ -9,7 +9,7 @@
 #   2. Quests      — 10 canonical quests in campaign_order with danger levels
 #   3. Artifacts   — 16 notable items with stat_bonus jsonb and corrupted flag
 #   4. Quest Memberships — Fellowship of the Ring assigned to quest #1
-#   5. SimulationConfig  — singleton defaults (campaign mode, not running)
+#   5. SimulationConfig  — singleton config, running: true so ticks begin
 #
 # Idempotency: every record uses find_or_create_by!(name:) so running
 # `rails db:seed` twice is safe — no duplicates will be created.
@@ -617,12 +617,18 @@ ActiveRecord::Base.transaction do
   puts "  #{QuestMembership.count} quest memberships present."
 
   # ---------------------------------------------------------------------------
-  # 5. SimulationConfig — singleton defaults
+  # 5. SimulationConfig — singleton config
   # ---------------------------------------------------------------------------
+  # Ensure the simulation is running so that QuestTickWorker (fired every
+  # minute by sidekiq-cron) actually processes quests. Without running: true
+  # the worker returns immediately and quest progress never advances.
+  # update! is guarded by unless to be idempotent on re-seed.
   puts "Seeding simulation config..."
 
-  SimulationConfig.current
-  puts "  SimulationConfig present (mode: #{SimulationConfig.current.mode}, running: #{SimulationConfig.current.running})."
+  sim_config = SimulationConfig.current
+  sim_config.update!(running: true) unless sim_config.running?
+
+  puts "  SimulationConfig present (mode: #{sim_config.reload.mode}, running: #{sim_config.reload.running})."
 
   puts ""
   puts "Seed complete: #{Character.count} characters, #{Quest.count} quests, #{Artifact.count} artifacts, #{QuestMembership.count} memberships."
