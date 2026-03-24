@@ -14,24 +14,30 @@ RSpec.describe "Api::V1::Events", type: :request do
 
     it "returns all events" do
       get "/api/v1/events"
-      expect(response.parsed_body.length).to eq(3)
+      body = response.parsed_body
+      expect(body["events"].length).to eq(3)
+      expect(body["meta"]).to include("total" => 3, "page" => 1)
     end
 
     it "filters by event_type" do
       get "/api/v1/events", params: { event_type: "started" }
-      expect(response.parsed_body.all? { |e| e["event_type"] == "started" }).to be(true)
+      body = response.parsed_body
+      expect(body["events"].all? { |e| e["event_type"] == "started" }).to be(true)
     end
 
     it "filters by quest_id" do
       other_quest = create(:quest)
       create(:quest_event, quest: other_quest, event_type: :progress)
       get "/api/v1/events", params: { quest_id: quest.id }
-      expect(response.parsed_body.length).to eq(3)
+      expect(response.parsed_body["events"].length).to eq(3)
     end
 
     it "paginates" do
       get "/api/v1/events", params: { per_page: 2 }
-      expect(response.parsed_body.length).to eq(2)
+      body = response.parsed_body
+      expect(body["events"].length).to eq(2)
+      expect(body["meta"]["total"]).to eq(3)
+      expect(body["meta"]["total_pages"]).to eq(2)
     end
   end
 end
