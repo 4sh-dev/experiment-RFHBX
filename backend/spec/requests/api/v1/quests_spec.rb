@@ -27,6 +27,33 @@ RSpec.describe "Api::V1::Quests", type: :request do
       expect(response.parsed_body.length).to eq(2)
     end
 
+    it "sorts quests: active first, then pending, then completed, then failed" do
+      Quest.delete_all
+      failed_quest    = create(:quest, :failed,    title: "F quest", campaign_order: nil)
+      completed_quest = create(:quest, :completed, title: "C quest", campaign_order: nil)
+      pending_quest   = create(:quest,             title: "P quest", campaign_order: nil)
+      active_quest    = create(:quest, :active,    title: "A quest", campaign_order: nil)
+
+      get "/api/v1/quests"
+      ids = response.parsed_body.map { |q| q["id"] }
+      expect(ids.index(active_quest.id)).to be < ids.index(pending_quest.id)
+      expect(ids.index(pending_quest.id)).to be < ids.index(completed_quest.id)
+      expect(ids.index(completed_quest.id)).to be < ids.index(failed_quest.id)
+    end
+
+    it "orders pending quests by campaign_order within their group" do
+      Quest.delete_all
+      pending_b = create(:quest, title: "P-B", campaign_order: 2)
+      pending_a = create(:quest, title: "P-A", campaign_order: 1)
+      active    = create(:quest, :active, title: "Active", campaign_order: nil)
+
+      get "/api/v1/quests"
+      ids = response.parsed_body.map { |q| q["id"] }
+      expect(ids.first).to eq(active.id)
+      pending_ids = ids - [active.id]
+      expect(pending_ids).to eq([pending_a.id, pending_b.id])
+    end
+
     it "returns progress as a number, not a string" do
       get "/api/v1/quests"
       progress_values = response.parsed_body.map { |q| q["progress"] }

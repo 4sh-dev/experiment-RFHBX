@@ -7,7 +7,7 @@ module Api
 
       # GET /api/v1/quests
       def index
-        quests = Quest.includes(:characters).all.order(:title)
+        quests = Quest.includes(:characters).all.order(Arel.sql("CASE status WHEN 'active' THEN 0 WHEN 'pending' THEN 1 WHEN 'completed' THEN 2 WHEN 'failed' THEN 3 ELSE 4 END, campaign_order ASC"))
         quests = quests.where(status: params[:status]) if params[:status].present?
         render json: paginate(quests).map { |q| quest_detail(q) }
       end
