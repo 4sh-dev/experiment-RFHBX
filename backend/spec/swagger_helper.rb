@@ -36,7 +36,8 @@ RSpec.configure do |config|
               endurance: { type: :integer, example: 16 },
               status: { type: :string, enum: %w[idle on_quest fallen], example: "idle" },
               created_at: { type: :string, format: "date-time" },
-              updated_at: { type: :string, format: "date-time" }
+              updated_at: { type: :string, format: "date-time" },
+              artifact_count: { type: :integer, example: 2, description: "Number of artifacts owned by this character" }
             },
             required: %w[id name race level xp strength wisdom endurance status]
           },
@@ -243,7 +244,7 @@ RSpec.configure do |config|
               quest_id: { type: :integer, example: 1 },
               event_type: {
                 type: :string,
-                enum: %w[started progress completed failed restarted],
+                enum: %w[started progress completed failed restarted artifact_found],
                 example: "progress"
               },
               message: {
