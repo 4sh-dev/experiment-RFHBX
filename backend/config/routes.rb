@@ -65,6 +65,11 @@ Rails.application.routes.draw do
       patch "simulation/config", to: "simulation#update_config"
       post  "simulation/reset",  to: "simulation#reset"
 
+      post "chaos/kill_character",   to: "chaos#kill_character"
+      post "chaos/fail_quest",       to: "chaos#fail_quest"
+      post "chaos/destroy_artifact", to: "chaos#destroy_artifact"
+      post "chaos/drain_xp",         to: "chaos#drain_xp"
+
       resources :events, only: %i[index]
       get "leaderboard", to: "leaderboard#index"
       post "palantir/send", to: "palantir#deliver"

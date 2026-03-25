@@ -377,6 +377,78 @@ RSpec.configure do |config|
               }
             },
             required: %w[errors]
+          },
+
+          ChaosKillResult: {
+            type: :object,
+            description: "Result of a kill_character chaos injection",
+            properties: {
+              affected: {
+                type: :object,
+                description: "The character that was killed",
+                properties: {
+                  id: { type: :integer, example: 1 },
+                  name: { type: :string, example: "Boromir" },
+                  status: { type: :string, example: "fallen" }
+                },
+                required: %w[id name status]
+              }
+            },
+            required: %w[affected]
+          },
+
+          ChaosFailQuestResult: {
+            type: :object,
+            description: "Result of a fail_quest chaos injection",
+            properties: {
+              affected: {
+                type: :object,
+                description: "The quest that was failed",
+                properties: {
+                  id: { type: :integer, example: 1 },
+                  title: { type: :string, example: "Destroy the One Ring" },
+                  status: { type: :string, example: "failed" }
+                },
+                required: %w[id title status]
+              }
+            },
+            required: %w[affected]
+          },
+
+          ChaosDestroyArtifactResult: {
+            type: :object,
+            description: "Result of a destroy_artifact chaos injection",
+            properties: {
+              affected: {
+                type: :object,
+                description: "The artifact that was destroyed",
+                properties: {
+                  id: { type: :integer, example: 1 },
+                  name: { type: :string, example: "The One Ring" },
+                  artifact_type: { type: :string, example: "ring" }
+                },
+                required: %w[id name artifact_type]
+              }
+            },
+            required: %w[affected]
+          },
+
+          ChaosDrainXpResult: {
+            type: :object,
+            description: "Result of a drain_xp chaos injection",
+            properties: {
+              characters_affected: {
+                type: :integer,
+                description: "Number of characters whose XP was drained",
+                example: 5
+              },
+              xp_drained: {
+                type: :integer,
+                description: "Total XP drained across all affected characters",
+                example: 2500
+              }
+            },
+            required: %w[characters_affected xp_drained]
           }
         }
       }

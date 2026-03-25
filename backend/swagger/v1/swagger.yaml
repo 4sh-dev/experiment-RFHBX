@@ -615,6 +615,90 @@ components:
           - Level must be greater than 0
       required:
       - errors
+    ChaosKillResult:
+      type: object
+      description: Result of a kill_character chaos injection
+      properties:
+        affected:
+          type: object
+          description: The character that was killed
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: Boromir
+            status:
+              type: string
+              example: fallen
+          required:
+          - id
+          - name
+          - status
+      required:
+      - affected
+    ChaosFailQuestResult:
+      type: object
+      description: Result of a fail_quest chaos injection
+      properties:
+        affected:
+          type: object
+          description: The quest that was failed
+          properties:
+            id:
+              type: integer
+              example: 1
+            title:
+              type: string
+              example: Destroy the One Ring
+            status:
+              type: string
+              example: failed
+          required:
+          - id
+          - title
+          - status
+      required:
+      - affected
+    ChaosDestroyArtifactResult:
+      type: object
+      description: Result of a destroy_artifact chaos injection
+      properties:
+        affected:
+          type: object
+          description: The artifact that was destroyed
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: The One Ring
+            artifact_type:
+              type: string
+              example: ring
+          required:
+          - id
+          - name
+          - artifact_type
+      required:
+      - affected
+    ChaosDrainXpResult:
+      type: object
+      description: Result of a drain_xp chaos injection
+      properties:
+        characters_affected:
+          type: integer
+          description: Number of characters whose XP was drained
+          example: 5
+        xp_drained:
+          type: integer
+          description: Total XP drained across all affected characters
+          example: 2500
+      required:
+      - characters_affected
+      - xp_drained
 paths:
   "/api/v1/artifacts":
     get:
@@ -752,6 +836,90 @@ paths:
                 artifact:
                   "$ref": "#/components/schemas/ArtifactInput"
         required: true
+  "/api/v1/chaos/kill_character":
+    post:
+      summary: Kill a random character
+      tags:
+      - Chaos
+      operationId: chaosKillCharacter
+      description: Kills a random non-fallen character for disaster recovery training.
+        Returns 422 if no eligible characters exist.
+      responses:
+        '200':
+          description: character killed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ChaosKillResult"
+        '422':
+          description: no eligible characters
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+  "/api/v1/chaos/fail_quest":
+    post:
+      summary: Fail a random active quest
+      tags:
+      - Chaos
+      operationId: chaosFailQuest
+      description: Fails a random active quest and returns its non-fallen members
+        to idle. Returns 422 if no active quests exist.
+      responses:
+        '200':
+          description: quest failed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ChaosFailQuestResult"
+        '422':
+          description: no active quests
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+  "/api/v1/chaos/destroy_artifact":
+    post:
+      summary: Destroy a random artifact
+      tags:
+      - Chaos
+      operationId: chaosDestroyArtifact
+      description: Permanently destroys a random artifact. Returns 422 if no artifacts
+        exist.
+      responses:
+        '200':
+          description: artifact destroyed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ChaosDestroyArtifactResult"
+        '422':
+          description: no artifacts
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+  "/api/v1/chaos/drain_xp":
+    post:
+      summary: Drain XP from all characters
+      tags:
+      - Chaos
+      operationId: chaosDrainXp
+      description: Drains 50% XP from all non-fallen characters. Returns 422 if no
+        eligible characters exist.
+      responses:
+        '200':
+          description: XP drained
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ChaosDrainXpResult"
+        '422':
+          description: no eligible characters
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
   "/api/v1/characters":
     get:
       summary: List all characters
