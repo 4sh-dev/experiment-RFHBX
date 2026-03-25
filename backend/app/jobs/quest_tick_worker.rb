@@ -100,6 +100,9 @@ class QuestTickWorker
 
     quest.update!(status: :completed, progress: 1.0)
 
+    # Award artifact drops to party members before broadcasting completion
+    ArtifactDropService.call(quest)
+
     QuestEvent.create!(
       quest: quest,
       event_type: :completed,
