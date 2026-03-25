@@ -415,4 +415,32 @@ RSpec.describe QuestTickWorker, type: :job do
       end
     end
   end
+
+  describe "artifact drops on quest success" do
+    let!(:quest) { create(:quest, :active, danger_level: 5, progress: 0.99) }
+    let!(:character) do
+      create(:character, status: :on_quest, strength: 20, wisdom: 20, endurance: 20, level: 1, xp: 0)
+    end
+
+    before do
+      create(:quest_membership, quest: quest, character: character)
+      config.update!(progress_min: 0.05, progress_max: 0.1)
+      # Force quest to complete successfully
+      allow_any_instance_of(QuestTickWorker).to receive(:rand).with(100.0).and_return(1.0)
+      allow_any_instance_of(QuestTickWorker).to receive(:rand).with(no_args).and_return(0.5)
+    end
+
+    it "calls ArtifactDropService on quest success" do
+      expect(ArtifactDropService).to receive(:call).with(quest)
+      subject.perform
+    end
+
+    it "does not call ArtifactDropService when quest fails" do
+      # Force failure by making rand(100.0) return a high number
+      allow_any_instance_of(QuestTickWorker).to receive(:rand).with(100.0).and_return(99.0)
+      allow_any_instance_of(QuestTickWorker).to receive(:rand).with(no_args).and_return(0.5)
+      expect(ArtifactDropService).not_to receive(:call)
+      subject.perform
+    end
+  end
 end
