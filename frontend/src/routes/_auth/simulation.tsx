@@ -243,7 +243,7 @@ export function SimulationConfigForm({ config, isActing, onSubmit }: ConfigFormP
 
           <NumberInput
             label="Tick interval (seconds)"
-            description="How often the simulation advances (must be > 0)"
+            description="Simulation clock speed: seconds between each tick (stored in DB, takes precedence over the QUEST_TICK_INTERVAL env var). Must be > 0."
             min={1}
             value={values.tick_interval_seconds}
             onChange={(v) => setValues((prev) => ({ ...prev, tick_interval_seconds: v }))}
