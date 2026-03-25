@@ -73,6 +73,12 @@ services:
       OIDC_JWKS_CACHE_TTL: ${OIDC_JWKS_CACHE_TTL:-3600}
       # Dev auth bypass — set to "true" to skip OIDC in development
       DEV_AUTH_BYPASS: ${DEV_AUTH_BYPASS:-false}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/up"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy
@@ -118,7 +124,7 @@ services:
       DEV_AUTH_BYPASS: ${DEV_AUTH_BYPASS:-false}
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
       postgres:
         condition: service_healthy
       redis:
