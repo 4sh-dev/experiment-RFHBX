@@ -151,4 +151,38 @@ describe('QuestCard', () => {
 
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
+
+  it('shows progress bar at 100% for completed quest with null progress', () => {
+    const completedQuest: Quest = {
+      ...sampleQuest,
+      status: 'completed',
+      progress: null,
+    };
+    render(<QuestCard quest={completedQuest} onClick={vi.fn()} />, { wrapper });
+
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toBeInTheDocument();
+    expect(bar).toHaveAttribute('aria-valuenow', '100');
+    expect(bar).toHaveAttribute('aria-label', 'Quest progress: 100%');
+  });
+
+  it('shows progress bar at 100% for completed quest with stale zero progress', () => {
+    const completedQuest: Quest = {
+      ...sampleQuest,
+      status: 'completed',
+      progress: 0,
+    };
+    render(<QuestCard quest={completedQuest} onClick={vi.fn()} />, { wrapper });
+
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toBeInTheDocument();
+    expect(bar).toHaveAttribute('aria-valuenow', '100');
+    expect(bar).toHaveAttribute('aria-label', 'Quest progress: 100%');
+  });
+
+  it('does not show progress bar for pending quests with null progress', () => {
+    render(<QuestCard quest={sampleQuest} onClick={vi.fn()} />, { wrapper });
+
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
 });

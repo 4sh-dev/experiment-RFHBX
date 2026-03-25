@@ -37,6 +37,7 @@ function dangerColor(level: number): string {
 export function QuestCard({ quest, onClick, onAdvance }: QuestCardProps) {
   const statusColor = STATUS_COLORS[quest.status] ?? 'gray';
   const nextStatus = STATUS_TRANSITIONS[quest.status];
+  const effectiveProgress = quest.status === 'completed' ? 100 : quest.progress;
 
   return (
     <Card
@@ -78,13 +79,13 @@ export function QuestCard({ quest, onClick, onAdvance }: QuestCardProps) {
           )}
         </Group>
 
-        {quest.progress != null && (
+        {effectiveProgress != null && (
           <Progress
-            value={quest.progress}
+            value={effectiveProgress}
             size="sm"
             color={STATUS_COLORS[quest.status] ?? 'gray'}
-            aria-label={`Quest progress: ${Math.round(quest.progress)}%`}
-            aria-valuenow={quest.progress}
+            aria-label={`Quest progress: ${Math.round(effectiveProgress)}%`}
+            aria-valuenow={effectiveProgress}
             aria-valuemin={0}
             aria-valuemax={100}
           />
