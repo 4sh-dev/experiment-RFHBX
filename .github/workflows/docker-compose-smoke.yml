@@ -29,8 +29,11 @@ jobs:
         # image-pull time is not charged against the health-check timeout.
         run: docker compose pull postgres redis elasticmq
 
-      - name: Start full stack
-        run: docker compose up -d
+      - name: Start infrastructure services
+        # Start only the stateful infrastructure services first. App services
+        # (backend, sidekiq, …) depend on these being healthy before they can
+        # start, so we bring infra up separately and wait for it below.
+        run: docker compose up -d postgres redis elasticmq
 
       - name: Wait for infrastructure services to be healthy
         run: |
@@ -58,6 +61,15 @@ jobs:
           '
           echo "  elasticmq: ready ✓"
 
+      - name: Start application services
+        # With infra already healthy, start the full stack. docker compose up -d
+        # will block here until the backend's /api/health check passes (sidekiq
+        # depends on service_healthy for backend). On a cold-start CI runner this
+        # can take a few minutes (bundle check + db:prepare + Rails boot).
+        # We use || true so a transient failure falls through to the
+        # "Wait for backend" retry step rather than aborting the job.
+        run: docker compose up -d 2>&1 || true
+
       - name: Wait for backend to be ready
         uses: nick-fields/retry@v3
         with:
@@ -66,7 +78,20 @@ jobs:
           retry_on: error
           on_retry_command: |
             docker compose down -v
-            docker compose up -d
+            # Restart infra and wait for postgres to be healthy BEFORE starting
+            # app services — the backend entrypoint exits with an error if it
+            # can't reach postgres (set -e + connection check), which would mark
+            # the backend as unhealthy and block sidekiq from starting.
+            docker compose up -d postgres redis elasticmq
+            echo "Waiting for postgres to be healthy before starting app services..."
+            timeout 120 bash -c '
+              until docker inspect \
+                --format="{{if .State.Health}}{{.State.Health.Status}}{{end}}" \
+                "$(docker compose ps -q postgres)" 2>/dev/null | grep -q healthy; do
+                sleep 3
+              done
+            '
+            docker compose up -d 2>&1 || true
           command: |
             echo "Waiting for backend (entrypoint: bundle install + db:prepare + server start)..."
             until curl -sf http://localhost:3000/api/health > /dev/null 2>&1; do
