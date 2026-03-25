@@ -31,6 +31,7 @@ export function QuestDetailModal({ quest, onClose, onStart }: QuestDetailModalPr
   if (!quest) return null;
 
   const statusColor = STATUS_COLORS[quest.status] ?? 'gray';
+  const effectiveProgress = quest.status === 'completed' ? 100 : quest.progress;
 
   return (
     <Modal
@@ -72,12 +73,12 @@ export function QuestDetailModal({ quest, onClose, onStart }: QuestDetailModalPr
           <StatItem label="Attempts" value={quest.attempts} />
         </Group>
 
-        {quest.progress != null && (
+        {effectiveProgress != null && (
           <Stack gap={4}>
             <Text size="xs" c="dimmed">
               Progress
             </Text>
-            <Progress value={quest.progress} size="md" color="blue" />
+            <Progress value={effectiveProgress} size="md" color={statusColor} />
           </Stack>
         )}
 

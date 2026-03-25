@@ -112,4 +112,24 @@ describe('QuestDetailModal', () => {
     expect(screen.queryByTestId('no-members-message')).not.toBeInTheDocument();
     expect(screen.queryByText('Members')).not.toBeInTheDocument();
   });
+
+  it('shows progress bar at 100% for completed quest with null progress', () => {
+    const completedQuest: Quest = { ...sampleQuest, status: 'completed', progress: null };
+    render(<QuestDetailModal quest={completedQuest} onClose={vi.fn()} />, { wrapper });
+
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+  });
+
+  it('shows progress bar at 100% for completed quest with stale zero progress', () => {
+    const completedQuest: Quest = { ...sampleQuest, status: 'completed', progress: 0 };
+    render(<QuestDetailModal quest={completedQuest} onClose={vi.fn()} />, { wrapper });
+
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+  });
+
+  it('does not show progress bar for pending quest with null progress', () => {
+    render(<QuestDetailModal quest={sampleQuest} onClose={vi.fn()} />, { wrapper });
+
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
 });
