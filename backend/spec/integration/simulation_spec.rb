@@ -102,7 +102,7 @@ RSpec.describe "Simulation", type: :request do
             type: :number,
             format: :float,
             description: "Maximum tick progress increment (0–1, must be > progress_min)",
-            example: 0.1
+            example: 0.05
           },
           mode: {
             type: :string,
