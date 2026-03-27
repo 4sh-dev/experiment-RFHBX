@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_27_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_27_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -93,7 +93,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_27_000001) do
     t.integer "campaign_position", default: 0, null: false
     t.datetime "created_at", null: false
     t.string "mode", default: "campaign", null: false
-    t.decimal "progress_max", precision: 6, scale: 4, default: "0.1", null: false
+    t.decimal "progress_max", precision: 6, scale: 4, default: "0.05", null: false
     t.decimal "progress_min", precision: 6, scale: 4, default: "0.01", null: false
     t.boolean "running", default: false, null: false
     t.integer "tick_count", default: 0, null: false
