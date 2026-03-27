@@ -22,8 +22,8 @@ RSpec.describe SimulationConfig, type: :model do
       expect(config.progress_min).to eq(0.01)
     end
 
-    it "defaults progress_max to 0.1" do
-      expect(config.progress_max).to eq(0.1)
+    it "defaults progress_max to 0.05" do
+      expect(config.progress_max).to eq(0.05)
     end
 
     it "defaults campaign_position to 0" do

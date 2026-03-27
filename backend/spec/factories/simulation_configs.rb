@@ -5,7 +5,7 @@ FactoryBot.define do
     mode { :campaign }
     running { false }
     progress_min { 0.01 }
-    progress_max { 0.1 }
+    progress_max { 0.05 }
     campaign_position { 0 }
     tick_count { 0 }
 
