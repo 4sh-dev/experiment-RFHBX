@@ -27,6 +27,12 @@ export default defineConfig(({ mode }) => {
     ],
     server: {
       host: true,
+      // Vite 6+ rejects requests with unexpected Host headers (403) by default.
+      // In Docker Compose the Playwright container reaches the dev server via
+      // the service hostname (e.g. "frontend"), which is not in Vite's default
+      // allowed list.  Allowing all hosts is safe here because the dev server
+      // is only reachable inside the Docker compose network.
+      allowedHosts: true,
       proxy: {
         '/api': {
           target: apiTarget,
