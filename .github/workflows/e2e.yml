@@ -10,9 +10,6 @@ concurrency:
   group: e2e-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   e2e:
     name: Playwright E2E
@@ -21,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build all Docker images
         run: docker compose -f docker-compose.e2e.yml build
@@ -49,7 +46,7 @@ jobs:
         run: docker compose -f docker-compose.e2e.yml up -d backend sidekiq frontend 2>&1 || true
 
       - name: Wait for backend to be ready
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 8
           max_attempts: 3
@@ -83,7 +80,7 @@ jobs:
         # Wait for the Docker healthcheck to mark the frontend as healthy.
         # The healthcheck (node http.get on localhost:5173 inside the container)
         # has a 90 s start_period, so this step may take up to ~2 min.
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 5
           max_attempts: 3
@@ -192,7 +189,7 @@ jobs:
 
       - name: Upload Playwright report
         if: ${{ !cancelled() && steps.e2e-run.outcome != 'skipped' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: playwright-report/
@@ -201,7 +198,7 @@ jobs:
 
       - name: Upload Playwright screenshots and traces
         if: ${{ !cancelled() && steps.e2e-run.outcome != 'skipped' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-test-results
           path: test-results/
