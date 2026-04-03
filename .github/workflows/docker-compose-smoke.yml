@@ -10,9 +10,6 @@ concurrency:
   group: docker-smoke-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   smoke-test:
     name: Docker Compose Integration
@@ -21,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build all Docker images
         run: docker compose build
@@ -74,7 +71,7 @@ jobs:
         run: docker compose up -d 2>&1 || true
 
       - name: Wait for backend to be ready
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 8
           max_attempts: 3
